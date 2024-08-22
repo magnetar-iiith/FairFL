@@ -207,7 +207,7 @@ class BaseFedarated(object):
                 N_i[ V_set[i] ] = N_i[ V_set[i]   ] + 1
                 SUi.add(V_set[i])      
                 V_set.remove(V_set[i])
-                marg_util_sum = marg_util_sum + marg_util_1 
+                
                 
             # Create a dictionary of clients and their marginal utilities
             marg_util_dict = {i: marg_util[i] for i in range(len(marg_util))}
