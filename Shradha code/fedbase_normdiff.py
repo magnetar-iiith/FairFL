@@ -111,54 +111,13 @@ class BaseFedarated(object):
         pass
     
     #def select_cl_submod(self, round, num_clients, N_i, True ):
-    def select_cl_submod(self, round, num_clients, N_i,marg_util_sum, stochastic_greedy ):
+    def select_cl_submod(self, round, num_clients, N_i, stochastic_greedy ):
         print ("entered in cl_submod")
         
-        # Get per-client gradients as well as global gradient 
-        #all_grads = self.show_grads()
-
-        # if round == 0 or self.m_interval == 1:  # at the first iteration or when m=1, collect gradients from all clients
-        #     self.all_grads = np.asarray(self.show_grads()[:-1])
-            
-        #print("New shape", np.shape(self.all_grads))
-        # for i in range(len(self.clients)):
-        #     if all_grads[i].shape[0] > 8:
-        #         print('all_grads[i]', all_grads[i].shape)
-
-        # cc = 0
-        # # Get per-client model parameters (most recent available at client)
-        # for c in self.clients:
-        #     #client_params = c.get_params()
-        #     #cl_params = np.append(client_params[0].flatten(), client_params[1])
-        #     # cl_params = c.updatevec
-        #     if cc == 0:
-        #         all_cl_params = np.zeros([len(self.clients), len(c.updatevec)])
-        #     all_cl_params[cc] = c.updatevec
-        #     cc += 1
         
-        # Calculate gradient normed difference
-        #m_interval = 1 # parameter m in the paper; (integer >=1)
-        # if round % self.m_interval == 0:
-        # for i in range(len(self.clients)):
-        #     for j in range(len(self.clients)):
-        #         # print(all_grads[i], all_grads[j])
-        #         self.norm_diff[i,j] = np.linalg.norm(all_grads[i]-all_grads[j])
-        #         self.norm_diff2[i,j] = np.linalg.norm(all_cl_params[i]-all_cl_params[j])
-
-        # if round <= 1 or self.sim_metric == "grad":
-        #if round % self.m_interval == 0: # Update similarity matrix only after m_interval epochs
-            #self.norm_diff = pairwise_distances(all_grads[:-1], metric="euclidean")
-        # self.norm_diff = pairwise_distances(self.all_grads, metric="euclidean")
-        # np.fill_diagonal(self.norm_diff, self.norm_diff.max())
-        # np.fill_diagonal(self.norm_diff, self.norm_diff.min(1) * 0.5)
-        # np.fill_diagonal(self.norm_diff, 0)
-        # else:
-        #     self.norm_diff = pairwise_distances(all_cl_params, metric="euclidean")
-        #     np.fill_diagonal(self.norm_diff, 0.1)
-
         if stochastic_greedy:
             
-            SUi,N_i,marg_util_sum = self.stochastic_greedy(num_clients,0.1,N_i,marg_util_sum, round )
+            SUi,N_i = self.stochastic_greedy(num_clients,0.1,N_i, round )
             
         else:
             SUi = self.lazy_greedy(num_clients)
@@ -167,13 +126,13 @@ class BaseFedarated(object):
         indices = np.array(list(SUi))
         selected_clients = np.asarray(self.clients)[indices]
         
-        return indices, selected_clients,self.all_grads, N_i,marg_util_sum
+        return indices, selected_clients,self.all_grads, N_i
         #return indices,N_i, selected_clients, self.all_grads
         #return indices, selected_clients, self.all_grads,N_i
         
         
 #############################################################################################################################################
-    def stochastic_greedy(self, num_clients, subsample,N_i,marg_util_sum, round ):
+    def stochastic_greedy(self, num_clients, subsample,N_i, round ):
         
         V_set = set(range(len(self.clients)))
         SUi = set()
@@ -259,8 +218,7 @@ class BaseFedarated(object):
             
 
 
-        return SUi, N_i, marg_util_sum
-    
+        return SUi, N_i    
         
         
             
