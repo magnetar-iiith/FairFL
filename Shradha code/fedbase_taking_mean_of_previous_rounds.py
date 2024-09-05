@@ -111,14 +111,14 @@ class BaseFedarated(object):
         pass
     
     #def select_cl_submod(self, round, num_clients, N_i, True ):
-    def select_cl_submod(self, round, num_clients, N_i,reward, stochastic_greedy ):
+    def select_cl_submod(self, round, num_clients, N_i,reward,prev_grad_sum, stochastic_greedy ):
         print ("entered in cl_submod")
         
         
 
         if stochastic_greedy:
             
-            SUi,N_i,reward = self.stochastic_greedy(num_clients,0.1,N_i,reward, round )
+            SUi,N_i,reward, prev_grad_sum = self.stochastic_greedy(num_clients,0.1,N_i,reward, prev_grad_sum, round )
             
         else:
             SUi = self.lazy_greedy(num_clients)
@@ -127,7 +127,7 @@ class BaseFedarated(object):
         indices = np.array(list(SUi))
         selected_clients = np.asarray(self.clients)[indices]
         
-        return indices, selected_clients,self.all_grads, N_i, reward
+        return indices, selected_clients,self.all_grads, N_i, reward, prev_grad_sum
     
    
         #return indices,N_i, selected_clients, self.all_grads
@@ -135,12 +135,12 @@ class BaseFedarated(object):
         
         
 #############################################################################################################################################
-    def stochastic_greedy(self, num_clients, subsample,N_i,reward, round ):
+    def stochastic_greedy(self, num_clients, subsample,N_i,reward,prev_grad_sum, round ):
         
         V_set = set(range(len(self.clients)))
         print (V_set)
        
-        #reward = set(range(len(self.clients)))
+        
         SUi = set()
         prev_selected = []
        
@@ -157,7 +157,7 @@ class BaseFedarated(object):
                 val.append (value)
 
         val=np.array(val)
-        #print('Val is of the client to subtract is:',val)
+        
 
         if round == 0:
             SUi = V_set
@@ -171,43 +171,57 @@ class BaseFedarated(object):
                 if ni == 0 :
                     
                     print ("we are selecting client", ni+1)
-                    print ("reward is ", reward)
+                    print ("reward till now is ", reward)
                     marg_util = (self.norm_diff[:, V_set].sum(0))
                     max_marg_util = marg_util.max()
                     marg_util_normalized = marg_util / max_marg_util
-                    reward = (((round-1)* reward  + marg_util_normalized ) / round)
-                    lcb = reward[V_set] - val[V_set]
+                    reward_curr = (((round-1)* reward  + marg_util_normalized ) / round)
+                    
+                    
+                    lcb = reward_curr[V_set] - val[V_set]
                     i = lcb.argmin()
                     print ("selected index is ", i)
                     client_min = self.norm_diff[:, V_set[i]]
                     prev_selected.append(client_min)
+                    #print ("previous selected is", prev_selected )
                    
                 else:
                     print ("Selecting client : ", ni+1)
-                    ans = np.min (prev_selected, axis = 0)
-                    client_min_R = np.minimum(ans[:,None], self.norm_diff[:,V_set])
-                    marg_util = client_min_R.sum(0) 
+                    
 
+                    ans = np.min (prev_selected, axis = 0)
+     
+                    client_min_R = np.minimum(ans[:,None], self.norm_diff[:,V_set])
+
+                    marg_util = client_min_R.sum(0) 
                     max_marg_util = marg_util.max()
                     marg_util_normalized = marg_util / max_marg_util 
 
-                    reward[V_set] = (((round-1)* reward[V_set]  + marg_util_normalized) / round)
+                    reward_curr[V_set] = (((round-1)* reward[V_set]  + marg_util_normalized) / round)
                     
-                    lcb = reward[V_set] - val[V_set]
+                    #print ("the value i want to check is", ((round-1)* reward[V_set]  + marg_util_normalized))
+                    lcb = reward_curr[V_set] - val[V_set]
+                    
+                    #print ("lcb is ", lcb)
+                    
+                    
                     i =lcb.argmin()
                     client_min = client_min_R[:, i]
                     prev_selected.append(client_min_R[:, i])
                     
-
+                
                 N_i[V_set[i]] = N_i[V_set[i]] + 1
                 SUi.add(V_set[i])
                 V_set.remove(V_set[i])
-
+                print ("Current round reward is :", reward_curr)
+                
+            reward = reward_curr
+            print ("Reward for next round is ", reward)
             print('Number of times client get selected is as as follows ',N_i)
-            print ("The reward of all clints after this round is",reward )
+            #print ("The reward of all clints after this round is",reward )
 
 
-        return SUi, N_i, reward
+        return SUi, N_i, reward, prev_grad_sum
     
         
         
